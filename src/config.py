@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Database settings
     DATABASE_URL: str = "sqlite:///app.db"
-    DATABASE_CONSOLE_LOGS: bool = True
+    DATABASE_CONSOLE_LOGS: bool = False
 
     # API Key settings
     KEY_PREFIX: str = "sk"

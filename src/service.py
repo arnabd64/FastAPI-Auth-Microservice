@@ -7,6 +7,12 @@ from sqlalchemy.orm import Session
 
 from src.config import settings
 from src.database import APIKeys
+from src.schemas.responses import (
+    AllKeyQueryResponse,
+    DeleteKeyResponse,
+    KeyCreationResponse,
+    _SingleKeyQueryResponse,
+)
 
 
 class APIKeyService:
@@ -26,25 +32,26 @@ class APIKeyService:
 
         return key, digest
 
-    def _create_database_entry(self, digest: str):
-        # create database entry
-        key = APIKeys(key_hash=digest, user_id=self.user_id)
-
-        self.session.add(key)
-        self.session.commit()
-
-        return key.id
-
-    def _fetch_all_keys(self):
+    def fetch_all_keys(self):
         # sql query
         query = select(APIKeys).where(APIKeys.user_id == self.user_id)
 
         # execute
-        result = self.session.scalars(query).fetchall()
+        results = self.session.scalars(query).fetchall()
 
-        return result
+        # format output
+        keys = [
+            _SingleKeyQueryResponse(
+                id=key.id,
+                display_name=key.display_name,
+                created_on=key.created_on,
+                last_activity=key.last_activity,
+            )
+            for key in results
+        ]
+        return AllKeyQueryResponse(error=False, keys_found=len(keys), keys=keys)
 
-    def _delete_api_key(self, key_id: UUID):
+    def delete_api_key(self, key_id: UUID):
         # SQL statement to perform the action
         query = delete(APIKeys).where(APIKeys.id == key_id).returning(APIKeys)
 
@@ -54,11 +61,20 @@ class APIKeyService:
 
         return len(result) > 0
 
-    def issue_long_term_key(self):
+    def issue_long_term_key(self, display_name: str | None = None):
+        """Creates a new persistent API key"""
         # generate key
         key, digest = self._long_term_key()
 
-        # add to database
-        key_id = self._create_database_entry(digest)
+        # create database record
+        api_key = APIKeys(
+            key_hash=digest, display_name=display_name, user_id=self.user_id
+        )
 
-        return key_id
+        # add to database
+        self.session.add(api_key)
+        self.session.commit()
+
+        return KeyCreationResponse(
+            error=False, id=api_key.id, key=key, display_name=display_name
+        )

@@ -11,6 +11,7 @@ class APIKeys(SQLModel, table=True):
     id: UUID | None = Field(primary_key=True, default_factory=uuid4)
     key_hash: str = Field(unique=True)
     user_id: UUID = Field(index=True)
+    display_name: str | None = Field(default=None, nullable=True)
     created_on: datetime | None = Field(default_factory=func.now)
     last_activity: datetime | None = Field(default=None, nullable=True)
 
