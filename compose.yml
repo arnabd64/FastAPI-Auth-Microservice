@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - 8000:8000/tcp
+    environment:
+      - UVICORN_WORKERS=2

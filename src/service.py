@@ -9,7 +9,6 @@ from src.config import settings
 from src.database import APIKeys
 from src.schemas.responses import (
     AllKeyQueryResponse,
-    DeleteKeyResponse,
     KeyCreationResponse,
     _SingleKeyQueryResponse,
 )
@@ -22,7 +21,7 @@ class APIKeyService:
 
     def _long_term_key(self):
         # 1. generate secret key
-        secret: str = secrets.token_urlsafe(settings.KEY_LENGTH)
+        secret: str = secrets.token_urlsafe(settings.KEY_LENGTH).replace("-", "_")
 
         # 2. generate the SHA-256 Hash of the secret
         digest: str = hashlib.sha256(secret.encode("utf-8")).hexdigest()
@@ -49,7 +48,7 @@ class APIKeyService:
             )
             for key in results
         ]
-        return AllKeyQueryResponse(error=False, keys_found=len(keys), keys=keys)
+        return AllKeyQueryResponse(keys_found=len(keys), keys=keys)
 
     def delete_api_key(self, key_id: UUID):
         # SQL statement to perform the action
@@ -75,6 +74,4 @@ class APIKeyService:
         self.session.add(api_key)
         self.session.commit()
 
-        return KeyCreationResponse(
-            error=False, id=api_key.id, key=key, display_name=display_name
-        )
+        return KeyCreationResponse(id=api_key.id, key=key, display_name=display_name)

@@ -4,7 +4,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_session
+from src.dependencies import authenticate, get_session
 from src.lifespan import lifespan
 from src.router import router
 
@@ -34,3 +34,8 @@ def healthcheck(session: Session = Depends(get_session)):
         )
 
     return "ok"
+
+
+@app.get("/protected")
+def protected_route(credentials: dict = Depends(authenticate)):
+    return credentials

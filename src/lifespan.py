@@ -1,9 +1,9 @@
 import contextlib
 
+from sqlalchemy.exc import OperationalError
 from starlette.types import ASGIApp
 
 from src.database import ENGINE, SQLModel
-from sqlalchemy.exc import OperationalError
 
 
 @contextlib.asynccontextmanager

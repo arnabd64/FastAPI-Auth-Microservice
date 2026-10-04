@@ -9,18 +9,16 @@ from fastapi.routing import APIRouter
 from sqlalchemy.orm import Session
 
 from src.config import settings
-from src.dependencies import get_session
-from src.schemas.responses import (
-    AllKeyQueryResponse,
-    DeleteKeyResponse,
-    KeyCreationResponse,
-)
+from src.dependencies import authenticate, get_session
+from src.schemas.responses import AllKeyQueryResponse, KeyCreationResponse
 from src.service import APIKeyService
 
 router = APIRouter(prefix=settings.API_ROUTER_PREFIX, tags=["API Key"])
 
 
-@router.post("/", response_model=KeyCreationResponse)
+@router.post(
+    "/", response_model=KeyCreationResponse, status_code=status.HTTP_201_CREATED
+)
 def issue_api_key(
     user_id: Annotated[UUID, Header(alias="X-User-Id")],
     display_name: Annotated[str, Form()],
@@ -44,7 +42,7 @@ def list_api_keys(
     return service.fetch_all_keys()
 
 
-@router.delete("/", response_model=DeleteKeyResponse)
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 def delete_api_key(
     user_id: Annotated[UUID, Header(alias="X-User-Id")],
     key_id: Annotated[UUID, Form()],
@@ -53,5 +51,11 @@ def delete_api_key(
     service = APIKeyService(user_id=user_id, session=session)
     success: bool = service.delete_api_key(key_id)
     if not success:
-        return DeleteKeyResponse(error=True, message="invalid key_id value")
-    return DeleteKeyResponse(error=True, message="Deleted Key")
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+
+@router.head(
+    "/", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(authenticate)]
+)
+def validate_api_key():
+    return
