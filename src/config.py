@@ -16,5 +16,8 @@ class Settings(BaseSettings):
     # API router settings
     API_ROUTER_PREFIX: str = "/apikey"
 
+    # Logs
+    LOG_FILE_PATH: str = "app.log"
+
 
 settings = Settings()

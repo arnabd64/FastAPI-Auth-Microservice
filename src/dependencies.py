@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 from src.config import settings
 from src.database import ENGINE, APIKeys
+from src.logging import get_logger
 
+logger = get_logger(__name__)
 
 def get_session():
     session = Session(ENGINE)
@@ -53,11 +55,12 @@ def authenticate(
     record = session.scalars(query).first()
 
     if record is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid api key")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     # update the last_activity field on the database
     record.last_activity = datetime.now(timezone.utc)
     session.commit()
 
     # record found
+    logger.info("User Authenticated", extra={"user_id": record.user_id, "key_id": record.id})
     return {"id": record.id, "user_id": record.user_id}

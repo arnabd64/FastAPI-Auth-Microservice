@@ -12,7 +12,9 @@ from src.schemas.responses import (
     KeyCreationResponse,
     _SingleKeyQueryResponse,
 )
+from src.logging import get_logger
 
+logger = get_logger(__name__)
 
 class APIKeyService:
     def __init__(self, session: Session, user_id: UUID):
@@ -38,6 +40,8 @@ class APIKeyService:
         # execute
         results = self.session.scalars(query).fetchall()
 
+        logger.info(f"Found {len(results)} keys", extra={"user_id": self.user_id})
+
         # format output
         keys = [
             _SingleKeyQueryResponse(
@@ -58,7 +62,12 @@ class APIKeyService:
         result = self.session.scalars(query).fetchall()
         self.session.commit()
 
-        return len(result) > 0
+        if len(result) > 0:
+            logger.info("Deleted API Key", extra={"user_id": self.user_id, "key_id": key_id})
+            return True
+        else:
+            logger.error("Key not Found", extra={"user_id": self.user_id, "key_id": key_id})
+            return False
 
     def issue_long_term_key(self, display_name: str | None = None):
         """Creates a new persistent API key"""
@@ -73,5 +82,7 @@ class APIKeyService:
         # add to database
         self.session.add(api_key)
         self.session.commit()
+
+        logger.info("Issued New Key", extra={"user_id": self.user_id, "key_id": api_key.id})
 
         return KeyCreationResponse(id=api_key.id, key=key, display_name=display_name)
